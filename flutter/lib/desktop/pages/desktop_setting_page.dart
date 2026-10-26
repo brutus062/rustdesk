@@ -115,6 +115,22 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
         WidgetsBindingObserver {
+  bool _isSettingsUnlocked = false;
+  final TextEditingController _adminPwdController = TextEditingController();
+  final RxString _adminPwdError = ''.obs;
+  static const String _kAdminPassword = '__ADMIN_PASSWORD__';
+
+  void _verifyPassword() {
+    if (_adminPwdController.text == _kAdminPassword) {
+      _adminPwdError.value = '';
+      _adminPwdController.clear();
+      setState(() {
+        _isSettingsUnlocked = true;
+      });
+    } else {
+      _adminPwdError.value = translate('Incorrect password');
+    }
+  }
   late PageController controller;
   late Rx<SettingsTabKey> selectedTab;
 
@@ -273,6 +289,58 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    if (!_isSettingsUnlocked) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(28.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 54, color: Color(0xFF0071FF)),
+                    const SizedBox(height: 16),
+                    Text(translate('Settings Locked'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text(translate('Enter administrator password to access settings'), textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    Obx(() => TextField(
+                      controller: _adminPwdController,
+                      obscureText: true,
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        labelText: translate('Password'),
+                        errorText: _adminPwdError.value.isNotEmpty ? _adminPwdError.value : null,
+                        border: const OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) => _verifyPassword(),
+                    )),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.lock_open, size: 18),
+                          label: Text(translate('Unlock')),
+                          onPressed: _verifyPassword,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.background,
       body: _buildBlock(
@@ -1555,48 +1623,22 @@ class _SafetyState extends State<_Safety> with AutomaticKeepAliveClientMixin {
   }
 
   Widget idWhitelist() {
-    bool enabled = !locked;
-    RxBool hasIdWhitelist = idWhitelistNotEmpty().obs;
-    update() async {
-      hasIdWhitelist.value = idWhitelistNotEmpty();
-    }
-
-    onChanged(bool? checked) async {
-      changeIdWhiteList(callback: update);
-    }
-
-    final isOptFixed = isOptionFixed(kOptionIdWhitelist);
-    return GestureDetector(
-      child: Tooltip(
-        message: translate('id_whitelist_tip'),
-        child: Obx(() => Row(
-              children: [
-                Checkbox(
-                        value: hasIdWhitelist.value,
-                        onChanged: enabled && !isOptFixed ? onChanged : null)
-                    .marginOnly(right: 5),
-                Offstage(
-                  offstage: !hasIdWhitelist.value,
-                  child: MouseRegion(
-                    child: const Icon(Icons.warning_amber_rounded,
-                            color: Color.fromARGB(255, 255, 204, 0))
-                        .marginOnly(right: 5),
-                    cursor: SystemMouseCursors.click,
-                  ),
-                ),
-                Expanded(
-                    child: Text(
-                  translate('Use ID whitelisting'),
-                  style: TextStyle(color: disabledTextColor(context, enabled)),
-                ))
-              ],
-            )),
+    return Tooltip(
+      message: translate('id_whitelist_tip'),
+      child: Row(
+        children: [
+          Checkbox(
+            value: true,
+            onChanged: null,
+          ).marginOnly(right: 5),
+          Expanded(
+            child: Text(
+              translate('Use ID whitelisting') + ' (__SUPPORT_CLIENT_ID__)',
+              style: TextStyle(color: disabledTextColor(context, false)),
+            ),
+          ),
+        ],
       ),
-      onTap: enabled
-          ? () {
-              onChanged(!hasIdWhitelist.value);
-            }
-          : null,
     ).marginOnly(left: _kCheckBoxLeftMargin);
   }
 

@@ -1,3 +1,4 @@
+### 🛡️ Bespoke Locked-Down Client Fork - read on
 <p align="center">
   <img src="res/logo-header.svg" alt="RustDesk - Your remote desktop"><br>
   <a href="#raw-steps-to-build">Build</a> •
@@ -12,6 +13,39 @@
 > **Misuse Disclaimer:** <br>
 > The developers of RustDesk do not condone or support any unethical or illegal use of this software. Misuse, such as unauthorized access, control or invasion of privacy, is strictly against our guidelines. The authors are not responsible for any misuse of the application.
 
+---
+
+### 🛡️ Bespoke Locked-Down Client Fork
+
+> **Upstream Acknowledgement:**  
+> This repository is a custom fork of the fantastic open-source remote desktop software [RustDesk](https://github.com/rustdesk/rustdesk). Full credit and appreciation go to the original RustDesk maintainers and contributors. This fork incorporates custom configuration locks tailored for dedicated incoming-only support environments.
+
+#### Key Customisations:
+- **Hardcoded & Locked Servers:** Dedicated Rendezvous/Relay configurations with read-only server dialogues.
+- **Support-Only Mode:** Incoming QuickSupport connections only (outbound remote control disabled).
+- **Settings Barrier:** Administrator password required to unlock or modify application settings.
+- **Engine-Level Whitelist:** Visible and backend-enforced technician ID whitelisting.
+- **Service Lifecycle:** Automatic background service start on client launch and complete termination on quit.
+
+#### 🔨 Building from this Fork
+
+To build the standalone portable executable using your own private infrastructure parameters, use the automated PowerShell build script `Build-CustomRustDesk-FromFork.ps1`:
+
+```powershell
+./Build-CustomRustDesk-FromFork.ps1 `
+    -ServerHost "your.server.ip.or.domain" `
+    -ServerKey "your_server_public_key_here=" `
+    -AdminPassword "YourAdminUnlockPassword" `
+    -SupportClientID "123456789" `
+    -RepoUrl "https://github.com/brutus062/rustdesk.git" `
+    -TargetBranch "master" `
+    -ProjectRoot "C:\projects\rustdesk_custom" `
+    -OutputDirectory "C:\dist_custom" `
+    -OutputFilename "RustDesk-Support.exe"
+```
+> [!WARNING]  
+> **Do not bother the RustDesk team with problems or issues regarding this custom build.**  
+> If you encounter an issue, please report it directly on this fork's [Issues](https://github.com/brutus062/rustdesk/issues) page.
 
 Chat with us: [Discord](https://discord.gg/nDceKgxnkV) | [Twitter](https://twitter.com/rustdesk) | [Reddit](https://www.reddit.com/r/rustdesk) | [YouTube](https://www.youtube.com/@rustdesk)
 

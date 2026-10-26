@@ -2505,7 +2505,7 @@ pub fn main_support_remove_wallpaper() -> bool {
 }
 
 pub fn is_incoming_only() -> SyncReturn<bool> {
-    SyncReturn(config::is_incoming_only())
+    SyncReturn(true)
 }
 
 pub fn is_outgoing_only() -> SyncReturn<bool> {

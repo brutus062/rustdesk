@@ -69,139 +69,53 @@ void showServerSettingsWithValue(
     ServerConfig serverConfig,
     OverlayDialogManager dialogManager,
     void Function(VoidCallback)? upSetState) async {
-  var isInProgress = false;
-  final idCtrl = TextEditingController(text: serverConfig.idServer);
-  final relayCtrl = TextEditingController(text: serverConfig.relayServer);
-  final apiCtrl = TextEditingController(text: serverConfig.apiServer);
-  final keyCtrl = TextEditingController(text: serverConfig.key);
-
-  RxString idServerMsg = ''.obs;
-  RxString relayServerMsg = ''.obs;
-  RxString apiServerMsg = ''.obs;
-
-  final controllers = [idCtrl, relayCtrl, apiCtrl, keyCtrl];
-  final errMsgs = [
-    idServerMsg,
-    relayServerMsg,
-    apiServerMsg,
-  ];
+  final idCtrl = TextEditingController(text: "__SERVER_HOST__");
+  final relayCtrl = TextEditingController(text: "__SERVER_HOST__");
+  final keyCtrl = TextEditingController(text: "__SERVER_KEY__");
 
   dialogManager.show((setState, close, context) {
-    Future<bool> submit() async {
-      setState(() {
-        isInProgress = true;
-      });
-      bool ret = await setServerConfig(
-          null,
-          errMsgs,
-          ServerConfig(
-              idServer: idCtrl.text.trim(),
-              relayServer: relayCtrl.text.trim(),
-              apiServer: apiCtrl.text.trim(),
-              key: keyCtrl.text.trim()));
-      setState(() {
-        isInProgress = false;
-      });
-      return ret;
-    }
-
-    Widget buildField(
-        String label, TextEditingController controller, String errorMsg,
-        {String? Function(String?)? validator, bool autofocus = false}) {
-      if (isDesktop || isWeb) {
-        return Row(
-          children: [
-            SizedBox(
-              width: 120,
-              child: Text(label),
+    Widget buildReadOnlyField(String label, TextEditingController controller) {
+      return Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextFormField(
+              controller: controller,
+              enabled: false,
+              decoration: const InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+              ),
             ),
-            SizedBox(width: 8),
-            Expanded(
-              child: serverSettingsTextFormField(
-                label: label,
-                controller: controller,
-                errorMsg: errorMsg,
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                showLabelText: false,
-                validator: validator,
-                autofocus: autofocus,
-              ).workaroundFreezeLinuxMint(),
-            ),
-          ],
-        );
-      }
-
-      return serverSettingsTextFormField(
-        label: label,
-        controller: controller,
-        errorMsg: errorMsg,
-        validator: validator,
-      ).workaroundFreezeLinuxMint();
+          ),
+        ],
+      );
     }
 
     return CustomAlertDialog(
       title: Row(
         children: [
           Expanded(child: Text(translate('ID/Relay Server'))),
-          ...ServerConfigImportExportWidgets(controllers, errMsgs),
         ],
       ),
       content: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 500),
-        child: Form(
-          child: Obx(() => Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  buildField(translate('ID Server'), idCtrl, idServerMsg.value,
-                      autofocus: true),
-                  SizedBox(height: 8),
-                  if (!isIOS && !isWeb) ...[
-                    buildField(translate('Relay Server'), relayCtrl,
-                        relayServerMsg.value),
-                    SizedBox(height: 8),
-                  ],
-                  buildField(
-                    translate('API Server'),
-                    apiCtrl,
-                    apiServerMsg.value,
-                    validator: (v) {
-                      if (v != null && v.isNotEmpty) {
-                        if (!(v.startsWith('http://') ||
-                            v.startsWith("https://"))) {
-                          return translate("invalid_http");
-                        }
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 8),
-                  buildField('Key', keyCtrl, ''),
-                  if (isInProgress)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: LinearProgressIndicator(),
-                    ),
-                ],
-              )),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            buildReadOnlyField(translate('ID Server'), idCtrl),
+            const SizedBox(height: 8),
+            buildReadOnlyField(translate('Relay Server'), relayCtrl),
+            const SizedBox(height: 8),
+            buildReadOnlyField('Key', keyCtrl),
+          ],
         ),
       ),
       actions: [
-        dialogButton('Cancel', onPressed: () {
-          close();
-        }, isOutline: true),
-        dialogButton(
-          'OK',
-          onPressed: () async {
-            if (await submit()) {
-              close();
-              showToast(translate('Successful'));
-              upSetState?.call(() {});
-            } else {
-              showToast(translate('Failed'));
-            }
-          },
-        ),
+        dialogButton('Close', onPressed: close, isOutline: true),
       ],
     );
   });

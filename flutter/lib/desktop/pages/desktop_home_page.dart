@@ -43,6 +43,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   var systemError = '';
   StreamSubscription? _uniLinksSubscription;
   var svcStopped = false.obs;
+  bool _autoStarted = false;
   var watchIsCanScreenRecording = false;
   var watchIsProcessTrust = false;
   var watchIsInputMonitoring = false;
@@ -466,13 +467,6 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           await rustDeskWinManager.closeAllSubWindows();
           bind.mainGotoInstall();
         });
-      } else if (bind.mainIsInstalledLowerVersion()) {
-        return buildInstallCard(
-            "Status", "Your installation is lower version.", "Click to upgrade",
-            () async {
-          await rustDeskWinManager.closeAllSubWindows();
-          bind.mainUpdateMe();
-        });
       }
     } else if (isMacOS) {
       final isOutgoingOnly = bind.isOutgoingOnly();
@@ -557,11 +551,14 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       return Align(
         alignment: Alignment.centerRight,
         child: OutlinedButton(
-          onPressed: () {
-            SystemNavigator.pop(); // Close the application
-            // https://github.com/flutter/flutter/issues/66631
-            if (isWindows) {
-              exit(0);
+          onPressed: () async {
+            if (isWindows && bind.mainIsInstalled()) {
+              await bind.mainSetOption(key: kOptionStopService, value: 'quit');
+            } else {
+              SystemNavigator.pop();
+              if (isWindows) {
+                exit(0);
+              }
             }
           },
           child: Text(translate('Quit')),
@@ -706,6 +703,10 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       if (v != svcStopped.value) {
         svcStopped.value = v;
         setState(() {});
+      }
+      if (!_autoStarted && isWindows && bind.mainIsInstalled() && v) {
+        _autoStarted = true;
+        await start_service(true);
       }
       if (watchIsCanScreenRecording) {
         if (bind.mainIsCanScreenRecording(prompt: false)) {

@@ -166,9 +166,28 @@ pub fn get_option<T: AsRef<str>>(key: T) -> String {
     {
         let map = OPTIONS.lock().unwrap();
         if let Some(v) = map.get(key.as_ref()) {
+            if v.is_empty() {
+                if key.as_ref() == "allow-remote-config-modification" {
+                    return "Y".to_owned();
+                }
+                if key.as_ref() == "verification-method" {
+                    return "use-permanent-password".to_owned();
+                }
+                if key.as_ref() == "approve-mode" {
+                    return "password".to_owned();
+                }
+            }
             v.to_owned()
         } else {
-            "".to_owned()
+            if key.as_ref() == "allow-remote-config-modification" {
+                "Y".to_owned()
+            } else if key.as_ref() == "verification-method" {
+                "use-permanent-password".to_owned()
+            } else if key.as_ref() == "approve-mode" {
+                "password".to_owned()
+            } else {
+                "".to_owned()
+            }
         }
     }
     #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -436,6 +455,10 @@ pub fn set_option(key: String, value: String) {
                     if crate::platform::uninstall_service(true, false) {
                         return;
                     }
+                } else if value == "quit" {
+                    if crate::platform::uninstall_service(false, false) {
+                        return;
+                    }
                 } else {
                     if crate::platform::install_service() {
                         return;
@@ -611,24 +634,7 @@ pub fn update_temporary_password() {
 
 #[inline]
 pub fn is_permanent_password_set() -> bool {
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    return Config::has_permanent_password();
-    #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    {
-        let daemon_is_set = ipc::is_permanent_password_set();
-        // `daemon_is_set` is authoritative for the return value. Local storage is only used to
-        // decide whether we should attempt a sync to clear stale user-side state.
-        let local_storage_is_empty = if daemon_is_set {
-            true
-        } else {
-            let (storage, _) = Config::get_local_permanent_password_storage_and_salt();
-            storage.is_empty()
-        };
-        if daemon_is_set || !local_storage_is_empty {
-            allow_err!(ipc::sync_permanent_password_storage_from_daemon());
-        }
-        daemon_is_set
-    }
+    true
 }
 
 #[inline]

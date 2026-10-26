@@ -1614,6 +1614,7 @@ String translate(String name) {
 // rust: libs/hbb_common/src/config.rs -> option2bool()
 // sciter: Does not have the function, but it should be kept the same.
 bool option2bool(String option, String value) {
+  if (option == kOptionEnableCheckUpdate) { return value == 'Y'; }
   bool res;
   if (option.startsWith("enable-")) {
     res = value != "N";
@@ -1630,6 +1631,7 @@ bool option2bool(String option, String value) {
 }
 
 String bool2option(String option, bool b) {
+  if (option == kOptionEnableCheckUpdate) { return b ? 'Y' : 'N'; }
   String res;
   if (option.startsWith('enable-') &&
       option != kOptionEnableUdpPunch &&
@@ -4067,6 +4069,7 @@ void earlyAssert() {
 
 void checkUpdate() {
   if (!isWeb) {
+    if (!mainGetLocalBoolOptionSync(kOptionEnableCheckUpdate)) { return; }
     if (!bind.isCustomClient()) {
       platformFFI.registerEventHandler(
           kCheckSoftwareUpdateFinish, kCheckSoftwareUpdateFinish,
